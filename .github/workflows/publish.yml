@@ -1,0 +1,46 @@
+name: Compress and publish
+
+on:
+  push:
+    branches:
+    - main
+    - development
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+      - name: Versioning
+        id: versioning
+        uses: codacy/git-version@2.4.0
+        with:
+          release-branch: main
+          dev-branch: development
+          prefix: v
+      - name: Compression
+        id: compression
+        run: |
+          zip -r modpack.zip bin config mods
+      - name: Create release
+        id: release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.versioning.outputs.version }}
+          release_name: Release ${{ steps.versioning.outputs.version }}
+          prerelease: ${{ github.ref == 'refs/heads/development' && 'true' || 'false' }}
+      - name: Upload release assets
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.release.outputs.upload_url }}
+          asset_path: modpack.zip
+          asset_name: modpack.zip
+          asset_content_type: application/zip
