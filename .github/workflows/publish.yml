@@ -1,4 +1,4 @@
-name: Publish
+name: Compress and publish
 
 on:
   push:
@@ -7,11 +7,14 @@ on:
     - development
 
 jobs:
-  build:
+  publish:
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v2
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
       - name: Versioning
         id: versioning
         uses: codacy/git-version@2.4.0
@@ -23,12 +26,14 @@ jobs:
         id: compression
         run: |
           zip -r modpack.zip bin config mods
-      - name: Release
+      - name: Create release
         id: release
-        uses: actions/create-release@v1.1.4
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${ steps.versioning.outputs.version }
-          release_name: Release ${ steps.versioning.outputs.version }
+          tag_name: ${{ steps.versioning.outputs.version }}
+          release_name: Release ${{ steps.versioning.outputs.version }}
           prerelease: ${{ github.ref == 'refs/heads/development' && 'true' || 'false' }}
       - name: Upload release assets
         uses: actions/upload-release-asset@v1
