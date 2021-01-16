@@ -1,0 +1,21 @@
+name: Publish
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Versioning
+        uses: codacy/git-version@2.4.0
+        with:
+          release-branch: main
+          dev-branch: development
+          prefix: v
+      - name: Compression
+        run: |
+          zip -r modpack.zip bin config mods
